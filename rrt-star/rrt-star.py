@@ -49,9 +49,9 @@ class rrtstar():
         self.max_length = 25
         self.goal_radius = 30
 
-        self.reparent_radius = 50
+        self.reparent_radius = 110
 
-        self.max_sample_num = 1500
+        self.max_sample_num = 500
 
         self.num_sample_node = 0
         self.num_valid_node = 0
@@ -72,8 +72,6 @@ class rrtstar():
     def planning(self):
         self.open_nodes = dict()
         self.close_nodes = dict()
-
-
 
         self.nodes[(self.sx, self.sy)] = [ 0, ( self.sx, self.sy ) ]  # C, parent_grid 
         # self.open_nodes[(self.sx+2, self.sy-5)] = [ 1,1,2, [ self.sx, self.sy ] ]
@@ -98,11 +96,13 @@ class rrtstar():
             # print('sample: ',x,y)
 
             all_dists = []
+            all_total_cost = []
             all_nodes_xy = []
             for node in self.nodes :
                 if (node[0] != self.gx) and ( node[1] != self.gy): 
                     d = self.dist_2_points([node[0],node[1]],[x,y])
-                    all_dists.append(d)
+                    all_dists.append( d )
+                    all_total_cost.append(d + self.nodes[(node[0],node[1])][0])
                     all_nodes_xy.append( ( node[0] , node[1] ) )
             all_dists_min = min(all_dists)
             all_dists = np.array( all_dists )
@@ -123,7 +123,8 @@ class rrtstar():
                     discard = True
             
             if discard == False:
-                self.nodes[(x,y)] = [ self.nodes[nearest_node][0] + all_dists[min_dist_index] , nearest_node ]
+                # self.nodes[(x,y)] = [ self.nodes[nearest_node][0] + all_dists[min_dist_index] , nearest_node ]
+                self.nodes[(x,y)] = [ all_total_cost[min_dist_index] , nearest_node ]
 
                 self.num_valid_node += 1
 
