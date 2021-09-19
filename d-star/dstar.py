@@ -82,13 +82,8 @@ class dstar():
         step = 0
         print('robot starts moving ')
         while self.reach_goal == False:
-            # step += 1
-
-            # new_obs = [[20,17],[20,18],[20,19],[20,20],[20,21],[20,22],[20,23],[20,24],[20,25]]#
-            # self.update_obstacle_map( new_obs, [])
-            # new_obs = [[41,35],[42,35],[43,35],[44,35],[45,35],[46,35]]#
-            # self.update_obstacle_map( new_obs, [])
-
+            
+            ###  add obstacles onto map
             if step == 5:
                 new_obs = [[20,17],[22,25]]#
                 self.update_obstacle_map( new_obs, [])
@@ -108,31 +103,30 @@ class dstar():
                 new_obs = [[44,38],[54,39]]#
                 self.update_obstacle_map( new_obs, [])
 
-                # new_obs = [[41,42],[51,43]]#
-                # self.update_obstacle_map( new_obs, [])
 
+            ##### move robot or find path
 
+            # get a clean copy of the map for visulization 
             self.obstacle_map_view = self.obstacle_map_view_backup.copy()
 
-            # self.obstacle_map[10,15] = 255
-
-            # self.draw_all_nodes_for_view()
-
-            ### check if the next step (grid) is obsticle
-            # if not, then move to it
+            # move robot 
             self.rbt_x = self.path[0][0]
             self.rbt_y = self.path[0][1]
             self.obstacle_map_view[self.rbt_y,self.rbt_x] = [255,255,255]
-            # print('')
+            
             print('moved one step, now at ',self.rbt_x, self.rbt_y)
+            
+            # if robot position is identicle to the goal position
             if self.rbt_x == self.sx and self.rbt_y == self.sy:
                 print('robot reached goal')
                 self.reach_goal = True
+            
+            # if robot position is NOT identicle to the goal position
             else:
-                # self.path.pop(0)
-                # print(self.path)
                 self.rbt_next_x = self.path[1][0]
                 self.rbt_next_y = self.path[1][1]
+
+                # if the next step is clear to move
                 if self.obstacle_map[self.rbt_next_y, self.rbt_next_x] == 255:
                     # print('next grid clear')
                     if len(self.path) >= 1:
@@ -141,6 +135,8 @@ class dstar():
                         step += 1
                     else:
                         self.reach_goal = True
+                
+                # if the next step is obstacle now
                 else:
                     print('Next grid blocked, looking for new path --------------')
                     
@@ -156,19 +152,16 @@ class dstar():
                         print('\nRobot at', (self.rbt_x, self.rbt_y) ,'. VRobot at', (v_rbt_x, v_rbt_y), '. Temp_path', temp_path)
                         
                         (v_rbt_x, v_rbt_y) = temp_path[v_rbt_step]
-                        # print('(v_rbt_x, v_rbt_y)', (v_rbt_x, v_rbt_y))
+                        
                         stateh, statek, stateparent = self.get_h_k_parent((v_rbt_x, v_rbt_y))
-                        # print('info ',(v_rbt_x, v_rbt_y), stateh, statek, stateparent)
+                        
                         self.modify_cost((v_rbt_x, v_rbt_y))
-                        # stateh, statek, stateparent = self.get_h_k_parent((v_rbt_x, v_rbt_y))
-                        # print('info ',(v_rbt_x, v_rbt_y), stateh, statek, stateparent)
+                        
                         self.process_state()
                         stateh, statek, stateparent = self.get_h_k_parent((v_rbt_x, v_rbt_y))
-                        # print('info ',(v_rbt_x, v_rbt_y), stateh, statek, stateparent)
+                        
                         if stateparent != temp_path[-1]:
                             temp_path.append(stateparent)
-                        # print('self.kmin , stateh', self.kmin , stateh)
-                        
                         
                         v_rbt_step += 1
 
@@ -184,13 +177,21 @@ class dstar():
 
 
     def get_h_k_parent(self, grid):
+        '''
+        - grid: (x,y)
+        Returns the h-cost, key-value, and parent grid xy of the input grid
+        '''
+
         if grid in self.open_nodes and grid not in self.close_nodes:
             return self.open_nodes[grid]
+
         if grid in self.close_nodes and grid not in self.open_nodes:
             return self.close_nodes[grid]
+
         if grid in self.close_nodes and grid in self.open_nodes:
             print('BOTHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH')
             return('check this grid, it is in both open and close')
+
         if grid not in self.close_nodes and grid not in self.open_nodes:
             print('NONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE')
             return('check this grid, it seems to be new')
@@ -199,12 +200,18 @@ class dstar():
 
 
     def process_state(self):
+        '''
+        This is the PROCESS-STATE function from the D* paper
+        '''
+        
+        ### get k_min
         ks = []
         for i in self.open_nodes:
             ks.append( self.open_nodes[i][1] )
         self.kmin = min(ks)
         # print('kmin ', self.kmin )
         
+        ### get grids with the kmin
         Xs = []
         for i in self.open_nodes:
             if self.open_nodes[i][1] == self.kmin:
@@ -213,8 +220,11 @@ class dstar():
         # print('Xs, open with kmin: ', Xs)
         if Xs == []:
             return -1
+
+        ### get k_old
         self.kold = self.kmin
 
+        ### iterate through all the grids have k=kmin
         for grid in Xs:
 
             # move grid from OPEN into CLOSED 
@@ -223,11 +233,10 @@ class dstar():
             x , y = grid[0], grid[1]
             cost = self.close_nodes[grid][0]
 
-            # print('self.kold , cost', self.kold , cost)
-
+            # The first type in process-state 
             if self.kold < cost:
                 # print('case 1 ')
-                found_a_new_parent = False
+                # found_a_new_parent = False
                 best_nb = [-1, -1, 999999]
 
                 for nb in self.motion: # the 8 direction motions
@@ -235,30 +244,26 @@ class dstar():
                     newy = y + nb[1]   # y posi
                     c_onestep = nb[2]  # cost from (x,y) to this surrounding grid
 
-                    if 0 < newx < self.x_size and 0 < newy < self.y_size and self.obstacle_map[newy,newx] != 0: # if this grid is inside the map
+                    if 0 < newx < self.x_size and 0 < newy < self.y_size and self.obstacle_map[newy,newx] != 0: # if this grid is inside the map and not obstacle 
                         if (newx, newy) in self.open_nodes:
                             nb_original_cost = self.open_nodes[(newx, newy)][0]
                         elif (newx, newy) in self.close_nodes:
                             nb_original_cost = self.close_nodes[(newx, newy)][0]
 
-                        # if self.obstacle_map[newy,newx] != 0:
-                        # print('neigbr:')
-                        # print(nb_original_cost + c_onestep ,  best_nb[-1])
                         if nb_original_cost + c_onestep < best_nb[-1]:
                             best_nb = [newx, newy, nb_original_cost + c_onestep]
-                            # print( 'best_nb ', best_nb )
-                        # print(nb_original_cost, self.kold , cost, c_onestep )
+
                         if ( nb_original_cost <= self.kold + 6 ) and (cost > (nb_original_cost + c_onestep) ):
-                            # print('yes in')
                             self.close_nodes[grid][2] = (best_nb[0], best_nb[1])
                             self.close_nodes[grid][0] = best_nb[2]
-                            found_a_new_parent = True
+                            # found_a_new_parent = True
 
 
                 # if found_a_new_parent == False:
                 #     raise ValueError('It\'s a trap !!!!!!!!!!!!!!!!!!!!!!!')
                     
 
+            ## The first type in process-state 
             elif self.kold == cost:
                 # print('case 2 ')
                 for nb in self.motion: # the 8 direction motions
@@ -283,17 +288,27 @@ class dstar():
                             self.insert( (newx,newy), nb_tag, cost+c_onestep )
 
 
+        ###  get kmin 
         ks = []
         for i in self.open_nodes:
             ks.append( self.open_nodes[i][1] )
         self.kmin = min(ks)
 
+
+        ###  check if goal is inside of CLOSE
         if (self.gx, self.gy) in self.close_nodes:
             self.first_path_found = True
         
 
 
     def insert(self, grid, tag, hnew ):
+        '''
+        This is the INSERT function from the D* paper
+        - grid: (x,y)
+        - tag: string 'new'  'open'   'close'
+        - hnew: float number 
+        The h-cost of this grid is updated
+        '''
         if tag == 'new':
             self.open_nodes[grid][1] = hnew
         elif tag == 'open':
@@ -305,12 +320,12 @@ class dstar():
             self.close_nodes.pop(grid)
             
     def modify_cost(self,grid):
+        '''
+        This is the MODIFT-COST  function from the D* paper
+        - grid: (x,y)
+        The h-cost of this grid is updated to the dummy large value
+        '''
         hnew = self.dummy_cost
-        # if tag == 'new':
-        #     self.open_nodes[grid] = [ 0, 0, (0,0) ]  # G, k, parent_grid
-        #     # self.open_nodes[grid][1] = self.dummy_cost
-        # elif tag == 'open':
-        #     self.open_nodes[grid][1] = min(self.open_nodes[grid][1], hnew)
         if grid in self.close_nodes:
             self.open_nodes[grid] = self.close_nodes.pop(grid)
             self.open_nodes[grid][1] = min(self.open_nodes[grid][0], hnew)
@@ -389,6 +404,9 @@ class dstar():
 
 
     def draw_all_nodes_for_view(self):
+        '''
+        Draw each point in OPEN and CLOSE groups on the map, for visulization only
+        '''
         # print('open')
         for i in self.open_nodes:
             # print( i, self.open_nodes[i][0], self.open_nodes[i][1], self.open_nodes[i][2])
@@ -399,19 +417,27 @@ class dstar():
             self.obstacle_map_view[i[1],i[0]] = [200,30,150]
         self.draw_ends_for_view()
 
+
     def draw_path_for_view(self):
+        '''
+        Draw the path points on the map, for visulization only
+        '''
         for i in self.path:
             if self.obstacle_map[i[1], i[0]] != 0:
                 self.obstacle_map_view[i[1],i[0]] = [0,255,30]
         self.draw_ends_for_view()
 
+
     def draw_ends_for_view(self):
+        '''
+        Draw the start point and finish point on the map, for visulization only
+        '''
         self.obstacle_map_view[self.sy,self.sx] = [0,255,0]
         self.obstacle_map_view[self.gy,self.gx] = [0,0,255]
 
 
     def set_motion_model(self):
-        # [ dx, dy, cost ] 
+        # each element in the list: [ dx, dy, cost ] 
         self.motion = [[ 1,  0, 10],
                        [ 0,  1, 10],
                        [-1,  0, 10],
@@ -422,6 +448,12 @@ class dstar():
                        [ 1,  1, 14]]
 
     def cvshow_larger(self, img, ratio, t):
+        '''
+        Show the input image, with a resize ratio in the input, with waitKey time value as t
+        - img: np.array, usually has shape of M x N x 3
+        - ratio: float/int,  not zero
+        - t: int,  unit milli-second
+        '''
         original_y = img.shape[0]
         original_x = img.shape[1]
         enlarged = cv2.resize(img, (int(original_x*ratio), int(original_y*ratio)),interpolation = cv2.INTER_NEAREST)
@@ -431,6 +463,21 @@ class dstar():
         cv2.waitKey(t) 
 
     def update_obstacle_map(self, new_obs, cleared):
+        '''
+        update the map array, according to the inputs:
+        - new_obs: [ [a,b], [c,d] ]  or []
+        - cleared: [ [a,b], [c,d] ]  or []
+
+        Inputs are the corners of rectangles:
+
+        [a,b]-----------
+        ----------------
+        ----------------
+        -----------[c,d]
+
+        This func also upadte the affected grid state, like OPEN, CLOSE, NEW 
+        '''
+
         if len(new_obs)!=0:
             # print('add obstacle to map')
             x1 = new_obs[0][0]
@@ -447,7 +494,6 @@ class dstar():
                     if (x,y) in self.open_nodes:
                         self.open_nodes.pop((x,y))
 
-
         if len(cleared)!=0:
             # print('remove obstacle from map')
             for i in cleared:
@@ -460,64 +506,17 @@ class dstar():
 
 
 def main():
+
     # start and goal position
-    
     sx = 16
     sy = 6
-    
     gx = 43 #42 
     gy = 47 #37 
 
-    # obstacle_map = cv2.imread( 'map_size_45.bmp' )
     obstacle_map = cv2.imread( 'map3.png' )
     # obstacle_map = cv2.rotate(obstacle_map, cv2.ROTATE_90_CLOCKWISE)
-    #obstacle_map = cv2.resize(obstacle_map, (45,45) )
-
-    print('bmp size ', obstacle_map.shape)
-
-    #obstacle_map[obstacle_map > 25]  =  255
-    #obstacle_map[obstacle_map <= 25]  =  0
-
-    #cv2.imwrite('map_size_45.bmp', obstacle_map)
-
-    # obstacle_map = np.array(
-    #     [
-    #         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    #         [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    #     ]
-    # )
-
-
-
-    # obstacle_map = np.array(
-    #     [
-    #         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    #         [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
-    #         [1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1]
-    #     ]
-    # )    
-
+    
+    print('map size: ', obstacle_map.shape)
 
     astarplanner = dstar(obstacle_map, sx, sy, gx, gy)
 
