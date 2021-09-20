@@ -8,44 +8,43 @@ import time
 from random import randint
 from bresenham import bresenham
 
-class astar():
+class rrt():
     def __init__(self, obstacle_map, sx, sy, gx, gy):
+
+        self.show_visul_map = True
 
         self.sx = sx
         self.sy = sy
         self.gx = gx
         self.gy = gy
 
+
+        # the array for visualization  ( not planning )
         self.obstacle_map_view = obstacle_map.copy()
-        # self.obstacle_map_view = 255 - self.obstacle_map_view 
-        self.obstacle_map_view[self.sy,self.sx] = [0,255,0]
-        self.obstacle_map_view[self.gy,self.gx] = [0,0,255]
-        cv2.circle( self.obstacle_map_view, (self.sx,self.sy), 6,(255,90,180), -1 )
-        cv2.circle( self.obstacle_map_view, (self.gx,self.gy), 6,(255,200,50), -1 )
-        self.cvshow_ratio = 2
-
-        # self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 0)
-
-        # print(self.obstacle_map_view.shape)
-
+        # parameters for visuliazaiton 
+        self.visual_circle_radius = 7
+        self.visual_circle_color = (255,50,50)
+        self.visual_circle_color_start = (0,  10 , 255)
+        self.visual_circle_color_goal  = (0, 255 , 10 )
+        self.visual_line_explore_thick = 3
+        self.visual_line_path_thick = 5
+        self.visual_line_explore_color = (0,255,0)
+        self.visual_line_path_color = (0,0,255)
+        self.cvshow_ratio = 1
         
-        self.obstacle_map = obstacle_map.copy()[:,:,0] 
-        self.obstacle_map = 255 - self.obstacle_map 
-        self.obstacle_map[self.obstacle_map == 255]  =  1
-        # print(self.obstacle_map)
-        # print(self.obstacle_map[230:310, 300:310])
-        # self.cvshow_larger(self.obstacle_map, self.cvshow_ratio, 0)
+        self.obstacle_map_view_backup = self.obstacle_map_view.copy()
 
+        # the array for planning  ( not visualization )
+        self.obstacle_map = obstacle_map.copy()[:,:,0] 
         self.x_size = self.obstacle_map.shape[1]
         self.y_size = self.obstacle_map.shape[0]
 
-        # self.open_nodes = dict()
-        # self.close_nodes = dict()
+        self.nodes = dict()  # store all nodes 
 
-        self.nodes = dict()
+        # parameters for planning behaivor 
         self.min_length = 10
-        self.max_length = 50
-        self.goal_radius = 30
+        self.max_length = 60
+        self.goal_radius = 60
 
         self.num_sample_node = 0
         self.num_valid_node = 0
@@ -53,13 +52,6 @@ class astar():
 
         self.reached_goal = False
 
-        # self.obstacle_map[sy,sx] = 77
-        # self.obstacle_map[gy,gx] = 33
-
-        # print(self.obstacle_map)
-
-        # self.get_motion_model()
-        
         self.planning()
 
 
@@ -67,16 +59,11 @@ class astar():
         self.open_nodes = dict()
         self.close_nodes = dict()
 
-
-
-        self.nodes[(self.sx, self.sy)] = [ 0, ( self.sx, self.sy ) ]  # C, parent_grid 
-        # self.open_nodes[(self.sx+2, self.sy-5)] = [ 1,1,2, [ self.sx, self.sy ] ]
-        # self.open_nodes[(self.sx+1, self.sy-1)] = [ 0,0,0, [ self.sx, self.sy ] ]
+        self.nodes[(self.sx, self.sy)] = [ 0, ( self.sx, self.sy ) ]  # cost, parent_grid 
 
         self.reached_goal = False
 
         while self.reached_goal == False:
-            # print('')
 
             self.num_sample_node += 1
 
@@ -84,7 +71,7 @@ class astar():
             while found_valid_point == False:
                 x = randint(1, self.x_size-1)
                 y = randint(1, self.y_size-1)
-                if self.obstacle_map[y,x] == 0:
+                if self.obstacle_map[y,x] == 255:
                     found_valid_point = True
             # print('sample: ',x,y)
 
@@ -106,10 +93,10 @@ class astar():
                     (x,y) = self.truncate_line( (x,y), nearest_node, all_dists_min )
             else:
                 discard = True
+
             # check if the new line run through obstacle
-            # discard = False
             for cell in list(bresenham(x, y, nearest_node[0], nearest_node[1])):
-                if self.obstacle_map[cell[1], cell[0]] != 0:
+                if self.obstacle_map[cell[1], cell[0]] == 0:
                     discard = True
             
             if discard == False:
@@ -125,10 +112,13 @@ class astar():
                 for node in self.nodes :
                     new_p = node
                     parent_p = self.nodes[node][1]
-                    cv2.line(self.obstacle_map_view, new_p, parent_p, (0,255,0), 1 )
+                    if self.show_visul_map:
+                        cv2.line(self.obstacle_map_view, new_p, parent_p, self.visual_line_explore_color, self.visual_line_explore_thick )
 
-
-                cv2.circle( self.obstacle_map_view, (x,y), 3,(255,0,100), -1 )
+                if self.show_visul_map:
+                    cv2.circle( self.obstacle_map_view, (x,y), self.visual_circle_radius , self.visual_circle_color , -1 )
+                    cv2.circle( self.obstacle_map_view, (self.sx , self.sy), self.visual_circle_radius , self.visual_circle_color_start , -1 )
+                    cv2.circle( self.obstacle_map_view, (self.gx , self.gy), self.visual_circle_radius , self.visual_circle_color_goal , -1 )
 
                 self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 30)
 
@@ -150,10 +140,8 @@ class astar():
                 for node in range(1,len(the_path)) :
                     new_p = the_path[node]
                     parent_p = the_path[node-1]
-                    cv2.line(self.obstacle_map_view, new_p, parent_p, (0,0,250), 1 )
-
-
-                # cv2.circle( self.obstacle_map_view, (x,y), 3,(255,0,100), -1 )
+                    if self.show_visul_map:
+                        cv2.line(self.obstacle_map_view, new_p, parent_p, self.visual_line_path_color , self.visual_line_path_thick )
 
                 self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 0)
 
@@ -179,17 +167,20 @@ class astar():
 
 
     def cvshow_larger(self, img, ratio, t):
+        '''
+        Show the input image, with a resize ratio in the input, with waitKey time value as t
+        - img: np.array, usually has shape of M x N x 3
+        - ratio: float/int,  not zero
+        - t: int,  unit milli-second
+        '''
         original_y = img.shape[0]
         original_x = img.shape[1]
-        enlarged = cv2.resize(img, (original_x*ratio, original_y*ratio),interpolation = cv2.INTER_NEAREST)
+        enlarged = cv2.resize(img, (int(original_x*ratio), int(original_y*ratio)),interpolation = cv2.INTER_NEAREST)
         # print('img size', img.shape)
         # print('large size', enlarged.shape)
-        cv2.imshow('plan', enlarged)
-        if t != 0:
+        if self.show_visul_map:
+            cv2.imshow('plan', enlarged)
             cv2.waitKey(t)
-        else:
-            cv2.waitKey(0)
-
 
 
 
@@ -198,26 +189,22 @@ class astar():
 
 
 def main():
+
     # start and goal position
-    
-    sx = 152
-    sy = 39
-    
-    gx = 300 #313
-    gy = 290 #230
+    sx = 192
+    sy = 120
+    gx = 560 
+    gy = 550 
 
-    obstacle_map = cv2.imread( 'map2.bmp' )
+    obstacle_map = cv2.imread( 'map3_large.png' )
     # obstacle_map = cv2.rotate(obstacle_map, cv2.ROTATE_90_CLOCKWISE)
+    print('map size: ', obstacle_map.shape)
 
-    print('bmp size ', obstacle_map.shape)
-
-
-    astarplanner = astar(obstacle_map, sx, sy, gx, gy)
+    astarplanner = rrt(obstacle_map, sx, sy, gx, gy)
 
 
 
 if __name__ == '__main__':
     main()
     
-
 
