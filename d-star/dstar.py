@@ -11,6 +11,8 @@ import time
 class dstar():
     def __init__(self, obstacle_map, sx, sy, gx, gy):
 
+        self.show_visul_map = True
+
         self.sx = gx   # start position and end position are inverted for D*
         self.sy = gy
         self.gx = sx
@@ -44,22 +46,27 @@ class dstar():
         
         self.set_motion_model()
 
+
+
+        ### this portion is for the initial path planning
         self.kmin = 0
         self.dummy_cost = 999999
-        
-        # self.Dijkstra_planning()  # initial planning, on the static map 
 
         self.open_nodes[(self.sx, self.sy)] = [ 0, 0, (self.sx,self.sy) ]  # G, k, parent_grid 
 
         while self.first_path_found == False:
             self.process_state()
-            self.draw_all_nodes_for_view()
-            self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 10)
+
+            if self.show_visul_map:
+                self.draw_all_nodes_for_view()
+                self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 10)
             
-        
+        ### End of initial path planning 
+
         print('OPEN nodes number: ',len(self.open_nodes))
         print('CLOSE nodes number: ',len(self.close_nodes))
         print()
+
 
         ### extract the path, starting from the 'goal' 
         self.path = []
@@ -70,11 +77,19 @@ class dstar():
             parent_node = self.close_nodes[ (x,y) ][2] # get its parent grid
             self.path.append(parent_node)              # add this parent grid into the path
         ###  show the extracted path 
-        self.draw_path_for_view()
-        self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 200)
+        if self.show_visul_map:
+            self.draw_path_for_view()
+            self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 200)
         print('Found the initial path, ready to move')
         print('path: ', self.path)
 
+
+
+        self.move_robot()
+
+
+
+    def move_robot(self):
 
         self.reach_goal = False
         self.rbt_x, self.rbt_y = -1, -1 

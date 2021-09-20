@@ -29,6 +29,8 @@ self.path - a list [ (x,y) , (x2,y2) , ... ]
 class astar():
     def __init__(self, obstacle_map, sx, sy, gx, gy):
 
+        self.show_visul_map = True
+
         self.sx = sx
         self.sy = sy
         self.gx = gx
@@ -117,8 +119,9 @@ class astar():
              
             
             # display the explored grids for visulizaiton 
-            self.draw_all_nodes_for_view()
-            self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 10)
+            if self.show_visul_map:
+                self.draw_all_nodes_for_view()
+                self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 10)
 
         ###  extract path from the examined grids 
         self.path.append((self.gx, self.gy))
@@ -129,8 +132,9 @@ class astar():
             self.path.append(parent_node)
 
         self.path.reverse()
-        self.draw_path_for_view()
-        self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 0)
+        if self.show_visul_map:
+            self.draw_path_for_view()
+            self.cvshow_larger(self.obstacle_map_view, self.cvshow_ratio, 0)
 
         print('Found the best path: ', self.path)
 
