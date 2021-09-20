@@ -2,7 +2,7 @@
 import math
 from math import sqrt
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import cv2 
 import time
 from random import randint
