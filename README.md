@@ -7,13 +7,13 @@ Searching Based:
 - [x] Dijkstra
 - [x] A*
 - [x] D*
-- [ ] LPA* (to-do)
-- [ ] D*-lite (to-do)
+- [ ] LPA*
+- [ ] D*-lite
 
 Sampling Based:
 - [x] RRT
 - [x] RRT*
-- [ ] RRT*-reeds-shepp (to-do)
+- [ ] RRT*-reeds-shepp
 
 
 ## Packages:
