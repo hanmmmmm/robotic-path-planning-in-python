@@ -9,6 +9,7 @@ Searching Based:
 - [x] D*
 - [ ] LPA*
 - [ ] D*-lite
+- [ ] Hybrid A*
 
 Sampling Based:
 - [x] RRT
@@ -17,9 +18,9 @@ Sampling Based:
 
 
 ## Packages:
-* numpy
-* math
-* cv2
-* random
-* bresenham
-* time
+* numpy  (for array operation)
+* math   (to use sin/cos)
+* cv2    (for loading map images and visulization)
+* random (optional, generating random numbers)
+* bresenham (for getting the grids covered by a line)
+* time   (optional, for timing only)
