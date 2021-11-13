@@ -7,7 +7,7 @@ Searching Based:
 - [x] Dijkstra
 - [x] A*
 - [x] D*
-- [ ] LPA*
+- [x] LPA*
 - [ ] D*-lite
 - [ ] Hybrid A*
 
