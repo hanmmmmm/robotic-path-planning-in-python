@@ -22,6 +22,8 @@ Dijkstra: https://www.youtube.com/watch?v=B2mUby28wsw&t=31s
 
 A* : https://www.youtube.com/watch?v=cMXApzVcOeY&t=598s 
 
+( More videos coming soon )
+
 ## Packages:
 * numpy  (for array operation)
 * math   (to use sin/cos)
