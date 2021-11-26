@@ -16,6 +16,11 @@ Sampling Based:
 - [x] RRT*
 - [ ] RRT*-reeds-shepp
 
+Step by step walktrough:
+
+Dijkstra: https://www.youtube.com/watch?v=B2mUby28wsw&t=31s 
+
+A* : https://www.youtube.com/watch?v=cMXApzVcOeY&t=598s 
 
 ## Packages:
 * numpy  (for array operation)
